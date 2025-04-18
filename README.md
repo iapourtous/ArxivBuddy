@@ -39,10 +39,6 @@ ArxivBuddy utilise une architecture modulaire basée sur CrewAI :
 ## 💻 Installation
 
 ```bash
-# Cloner le projet
-git clone https://github.com/votre-nom/arxivbuddy.git
-cd arxivbuddy
-
 # Créer un environnement virtuel
 python -m venv venv
 
