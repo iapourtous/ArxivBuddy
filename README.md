@@ -53,7 +53,20 @@ pip install -r requirements.txt
 # Configuration
 # Copier le fichier d'exemple et ajoutez vos clés API
 cp config/.env.example config/.env
-# Modifier le fichier .env avec votre éditeur préféré
+# Modifier le fichier .env avec votre éditeur préféré pour ajouter votre clé API
+
+# Le fichier .env doit contenir les informations suivantes :
+# CREW_API_KEY=sk-or-v1-votre-clé-openrouter-ici
+# CREW_MODEL=openai/gpt-4.1-mini
+# CREW_TEMPERATURE=0.7
+# CREW_MAX_TOKENS=4000
+# CREW_BASE_URL=https://openrouter.ai/api/v1
+# 
+# ARXIV_MAX_RESULTS=5
+# ARXIV_SORT_BY=submittedDate
+# ARXIV_SORT_ORDER=descending
+#
+# Vous pouvez obtenir une clé API OpenRouter en vous inscrivant sur https://openrouter.ai
 ```
 
 ## 🚀 Utilisation
