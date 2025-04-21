@@ -1,0 +1,348 @@
+# Configuration complète pour ArxivBuddy
+
+# Valeurs par défaut
+defaults:
+  crew:
+    api_key: ""
+    base_url: "https://openrouter.ai/api/v1"
+    model: "openrouter/openai/gpt-4.1-mini"
+    temperature: 0.7
+    max_tokens: 4000
+  arxiv:
+    max_results: 5
+    sort_by: "SubmittedDate"
+    sort_order: "Descending"
+
+# Configuration des agents
+agents:
+  query_parser:
+    role: "Expert en recherche scientifique"
+    goal: "Extraire les termes de recherche optimaux à partir d'une question"
+    backstory: >
+      Tu es un expert en recherche documentaire scientifique.
+      Tu comprends parfaitement comment transformer des questions en langage naturel
+      en requêtes de recherche optimisées. Tu sais comment identifier les concepts-clés,
+      les termes techniques spécifiques, et les relations entre eux pour formuler
+      des requêtes efficaces sur ArXiv.
+
+  arxiv_searcher:
+    role: "Spécialiste de recherche ArXiv"
+    goal: "Trouver les articles scientifiques les plus pertinents sur ArXiv"
+    backstory: >
+      Tu es un expert qui connaît parfaitement la base de 
+      données ArXiv et ses catégories. Tu maîtrises l'art de la recherche
+      documentaire scientifique et sais comment formuler des requêtes
+      précises pour trouver les articles les plus pertinents.
+
+  paper_analyzer:
+    role: "Analyste de publications scientifiques"
+    goal: "Extraire et comprendre les informations clés des articles scientifiques"
+    backstory: >
+      Tu es un expert en analyse de publications scientifiques.
+      Tu excelles dans l'extraction des informations essentielles, la compréhension
+      des méthodologies, des résultats et des implications. Tu sais rapidement
+      identifier l'importance et la pertinence d'un article par rapport à une
+      question de recherche.
+
+  summarizer:
+    role: "Expert en vulgarisation scientifique"
+    goal: "Simplifier et résumer des articles scientifiques complexes"
+    backstory: >
+      Tu es un expert en vulgarisation scientifique. 
+      Tu as un talent exceptionnel pour traduire des concepts scientifiques
+      complexes en explications claires et accessibles, tout en préservant
+      la précision et la nuance. Tu peux adapter ton niveau d'explication
+      à différents publics, des experts aux débutants.
+
+  synthesizer:
+    role: "Analyste en recherche scientifique"
+    goal: "Créer une synthèse comparative et identifier les tendances"
+    backstory: >
+      Tu es un analyste spécialisé dans la comparaison de 
+      travaux scientifiques. Tu identifies les similitudes, différences,
+      et tendances émergentes entre plusieurs articles de recherche.
+      Tu excelles dans la création de synthèses qui offrent une vue
+      d'ensemble claire et structurée sur un sujet scientifique.
+
+  translator:
+    role: "Traducteur et adaptateur de contenu scientifique"
+    goal: "Adapter le contenu scientifique selon le niveau et la langue"
+    backstory: >
+      Tu es un expert en traduction et adaptation de 
+      contenu scientifique. Tu sais comment adapter des explications
+      selon le niveau de l'audience (expert, étudiant, grand public)
+      et traduire fidèlement en différentes langues, notamment en français.
+      Tu préserves toujours la précision scientifique, même lorsque tu
+      simplifies le contenu.
+
+  professor:
+    role: "Professeur pédagogue"
+    goal: "Fournir une réponse claire, précise et vulgarisée à la question de l'utilisateur"
+    backstory: >
+      Tu es un professeur exceptionnel, reconnu pour ta capacité à 
+      expliquer des concepts scientifiques complexes de façon accessible et engageante.
+      Tu excelles dans l'art de vulgariser sans sacrifier la rigueur scientifique.
+      Tu sais adapter ton niveau d'explication selon le public, utiliser des analogies
+      pertinentes et structurer tes réponses de manière pédagogique. Tu as un talent
+      particulier pour aller directement à l'essentiel tout en donnant suffisamment
+      de contexte pour une compréhension complète.
+
+# Configuration des prompts
+prompts:
+  query_parser:
+    task_description: >
+      Analyse cette question en langage naturel: "{question}"
+      
+      INSTRUCTIONS:
+      1. Identifie les concepts scientifiques et termes techniques clés
+      2. Extrais les relations entre ces concepts
+      3. Formule une requête de recherche optimisée pour ArXiv
+      4. Utilise les opérateurs booléens appropriés (AND, OR) si nécessaire
+      5. Traduis la requête en anglais si elle n'est pas déjà en anglais
+      
+      CONTRAINTES:
+      - La requête doit être précise et ciblée
+      - Priorise les termes techniques spécifiques plutôt que des mots généraux
+      - Limite la requête à 3-5 termes/concepts clés maximum
+      - N'utilise pas de guillemets sauf si nécessaire pour des expressions exactes
+      
+      Format de sortie attendu:
+      {{
+          "search_query": "Requête optimisée pour ArXiv (en anglais)",
+          "keywords": ["mot-clé1", "mot-clé2", "mot-clé3"],
+          "context": "Brève description du contexte et de l'intention de recherche"
+      }}
+    expected_output: "Requête de recherche optimisée pour ArXiv"
+
+  arxiv_search:
+    task_description: >
+      Recherche sur ArXiv les articles correspondant à la requête optimisée.
+      
+      DONNÉES DE REQUÊTE:
+      {{parsing_task.output}}
+      
+      INSTRUCTIONS:
+      1. Utilise la requête optimisée pour rechercher des articles sur ArXiv
+      2. Limite les résultats aux {max_results} articles les plus pertinents
+      3. Privilégie les articles récents (moins de 2 ans si possible)
+      4. Vérifie que les articles trouvés sont vraiment pertinents par rapport à la question originale
+      5. Pour chaque article, collecte les informations suivantes:
+         - Titre complet
+         - Auteurs
+         - Date de publication
+         - ID ArXiv
+         - URL
+         - Résumé (abstract)
+         - Catégories ArXiv
+      
+      CONTRAINTES:
+      - Si moins de 3 articles pertinents sont trouvés, essaie de reformuler légèrement la requête
+      - Assure-toi que les articles couvrent différents aspects de la question si possible
+      - Évite les articles trop similaires entre eux
+      
+      Format de sortie attendu:
+      {{
+          "papers": [
+              {{
+                  "title": "Titre de l'article 1",
+                  "authors": ["Auteur 1", "Auteur 2"],
+                  "published_date": "YYYY-MM-DD",
+                  "arxiv_id": "XXXX.XXXXX",
+                  "url": "https://arxiv.org/abs/XXXX.XXXXX",
+                  "abstract": "Résumé de l'article",
+                  "categories": ["cat1", "cat2"]
+              }},
+              // autres articles...
+          ]
+      }}
+    expected_output: "Liste des articles les plus pertinents d'ArXiv"
+
+  paper_analysis:
+    task_description: >
+      Analyse en profondeur chacun des articles scientifiques trouvés.
+      
+      LISTE DES ARTICLES:
+      {{search_task.output}}
+      
+      INSTRUCTIONS:
+      1. Analyse le résumé (abstract) de chaque article
+      2. Identifie les points clés, méthodologies et résultats principaux
+      3. Évalue la pertinence de chaque article par rapport à la question originale
+      4. Identifie les concepts spécifiques et les contributions notables
+      5. Note les limitations éventuelles mentionnées dans les résumés
+      
+      CONTRAINTES:
+      - Reste factuel et objectif dans ton analyse
+      - Concentre-toi sur les aspects scientifiques et techniques
+      - Maintiens une perspective critique mais équilibrée
+      
+      Format de sortie attendu:
+      {{
+          "paper_analyses": [
+              {{
+                  "arxiv_id": "XXXX.XXXXX",
+                  "key_points": ["point 1", "point 2", "point 3"],
+                  "methodology": "Description de la méthodologie",
+                  "main_findings": "Principaux résultats",
+                  "relevance": "Évaluation de la pertinence (1-10)",
+                  "limitations": "Limitations éventuelles"
+              }},
+              // autres analyses...
+          ]
+      }}
+    expected_output: "Analyse détaillée de chaque article"
+
+  summary:
+    task_description: >
+      Crée un résumé simplifié des concepts principaux et découvertes à partir des articles analysés.
+      
+      DONNÉES DISPONIBLES:
+      - Articles trouvés: {{search_task.output}}
+      - Analyses des articles: {{analysis_task.output}}
+      - Contexte de la recherche: {{parsing_task.output}}
+      
+      INSTRUCTIONS:
+      1. Synthétise les informations essentielles des articles en 5-7 points clés
+      2. Identifie les concepts principaux qui apparaissent dans plusieurs articles
+      3. Explique les découvertes ou avancées majeures mentionnées
+      4. Adapte ton niveau d'explication pour {audience}
+      5. Organise l'information de manière claire et progressive
+      
+      CONTRAINTES:
+      - Évite le jargon trop spécialisé sauf si le niveau est "expert"
+      - Utilise des analogies ou exemples si utile pour clarifier (surtout pour "beginner")
+      - Ne dépasse pas 300-400 mots pour le résumé complet
+      - Reste factuel et précis, même en simplifiant
+      
+      Format de sortie attendu:
+      {{
+          "résumé_simplifié": "Texte du résumé détaillant les concepts et découvertes principales"
+      }}
+    expected_output: "Résumé simplifié des concepts et découvertes"
+
+  synthesis:
+    task_description: >
+      Crée une synthèse comparative des approches et solutions présentées dans les articles.
+      
+      DONNÉES DISPONIBLES:
+      - Résumé simplifié: {{summary_task.output}}
+      - Analyses des articles: {{analysis_task.output}}
+      - Articles trouvés: {{search_task.output}}
+      
+      INSTRUCTIONS:
+      1. Compare les différentes approches méthodologiques entre les articles
+      2. Identifie les points de convergence et de divergence entre les recherches
+      3. Dégage les tendances émergentes dans ce domaine de recherche
+      4. Évalue l'évolution des approches si des articles couvrent différentes périodes
+      5. Adapte ton niveau d'analyse pour {audience}
+      
+      CONTRAINTES:
+      - Maintiens une perspective équilibrée et objective
+      - Reste factuel et basé sur le contenu des articles
+      - Limite la synthèse à 250-350 mots
+      - Ne tire pas de conclusions qui vont au-delà de ce qui est présenté dans les articles
+      
+      Format de sortie attendu:
+      {{
+          "synthèse": "Texte de la synthèse comparative des approches et solutions"
+      }}
+    expected_output: "Synthèse comparative des approches et solutions"
+
+  translation:
+    task_description: >
+      Traduis en français et adapte le résumé et la synthèse selon le niveau demandé.
+      
+      CONTENU À TRADUIRE:
+      - Résumé simplifié: {{summary_task.output}}
+      - Synthèse comparative: {{synthesis_task.output}}
+      
+      INSTRUCTIONS:
+      1. Traduis fidèlement le contenu en français
+      2. Adapte le niveau de langage et d'explication pour {audience}
+      3. Assure-toi que la terminologie scientifique est correctement traduite
+      4. Préserve toutes les informations importantes du contenu original
+      5. Maintiens la structure et l'organisation de l'information
+      
+      CONTRAINTES:
+      - Évite les traductions mot-à-mot qui nuiraient à la compréhension
+      - Adapte les expressions idiomatiques au contexte francophone
+      - Conserve les termes techniques anglais entre parenthèses si nécessaire
+      - Assure-toi que le texte est fluide et naturel en français
+      
+      Format de sortie attendu:
+      {{
+          "résumé_simplifié_fr": "Traduction française du résumé simplifié",
+          "synthèse_fr": "Traduction française de la synthèse comparative"
+      }}
+    expected_output: "Traduction française du résumé et de la synthèse"
+
+  professor:
+    task_description: >
+      Réponds de manière pédagogique et vulgarisée à la question: "{query}"
+      
+      DONNÉES DISPONIBLES:
+      - Contexte de la recherche: {{parsing_task.output}}
+      - Analyses des articles: {{analysis_task.output}}
+      - Résumé simplifié: {{summary_task.output}}
+      - Synthèse comparative: {{synthesis_task.output}}
+      
+      INSTRUCTIONS:
+      1. Rédige une réponse claire, directe et précise à la question posée
+      2. Explique les concepts fondamentaux de manière accessible
+      3. Illustre si pertinent avec des exemples concrets ou des analogies
+      4. Structure ta réponse avec un début, un développement et une conclusion
+      5. Adapte ton niveau de langage pour un public non spécialiste mais intéressé
+      
+      CONTRAINTES:
+      - Va droit au but: commence par répondre directement à la question
+      - Limite ta réponse à environ 300-500 mots
+      - Évite le jargon technique excessif, explique les termes si nécessaire
+      - Reste rigoureux scientifiquement tout en restant accessible
+      - Utilise un ton pédagogique et engageant
+      
+      Format de sortie attendu:
+      {{
+          "réponse_pédagogique": "Texte de ta réponse pédagogique à la question"
+      }}
+    expected_output: "Réponse pédagogique à la question de l'utilisateur"
+
+  final_formatting:
+    task_description: >
+      Formate les résultats de recherche en un document markdown bien structuré.
+      
+      DONNÉES DISPONIBLES:
+      - Articles trouvés: {{search_task.output}}
+      - Résumé: {{summary_task.output}}
+      - Synthèse: {{synthesis_task.output}}
+      - Traduction: {{translation_task.output}}
+      - Réponse pédagogique: {{professor_task.output}}
+      
+      QUESTION ORIGINALE:
+      "{query}"
+      
+      INSTRUCTIONS:
+      1. Crée un document markdown avec les sections suivantes DANS CET ORDRE:
+         - Entête avec la question originale
+         - ⚡ Réponse à la question (utilise la réponse pédagogique du professeur)
+         - 🔍 Résumé des découvertes principales
+         - 📚 Liste des articles recommandés (5 plus pertinents si possible)
+         - 🧠 Synthèse comparative
+      2. Pour chaque article recommandé, inclus:
+         - Titre (en gras)
+         - Auteurs principaux (en italique)
+         - Lien vers l'article (format clickable)
+         - Une ligne résumant son apport principal
+      3. Utilise le contenu en français
+      
+      CONTRAINTES:
+      - La section "Réponse à la question" doit être en premier et contenir la réponse pédagogique complète
+      - Utilise une mise en forme markdown soignée (titres, listes, emphases)
+      - Inclus des emojis pertinents pour les titres de sections comme indiqué
+      - Mets en évidence les concepts et conclusions importantes (gras, italique)
+      - Assure-toi que les liens vers les articles sont corrects et cliquables
+      - Ajoute une séparation (---) entre chaque section principale
+      
+      IMPORTANT: FORMAT DE SORTIE
+      Ton résultat final doit être directement un document markdown proprement formaté.
+      N'inclus PAS de préambule comme "## Final Answer:" ou autre balise - juste le contenu markdown formaté.
+    expected_output: "Document markdown formaté avec les résultats"
